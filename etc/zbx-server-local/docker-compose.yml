@@ -1,0 +1,102 @@
+version: "3.1"
+services:
+
+  zbx_db:
+    image: postgres:9.6.12
+    environment:
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: zabbix
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data:/var/lib/postgresql/data:z
+    user: root
+    stop_grace_period: 1m
+    networks:
+      zbx_net_backend:
+        aliases:
+          - zbx_db
+         
+  zbx_server:
+    image: zabbix/zabbix-server-pgsql:centos-4.2.1
+    environment:    
+      DB_SERVER_HOST: zbx_db
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: zabbix
+      ZBX_DEBUGLEVEL: 5
+    ports:
+      - 10051:10051
+    stop_grace_period: 30s
+    links:
+      - zbx_db:zbx_db
+    depends_on:
+      - zbx_db
+    networks:
+      zbx_net_backend:
+        aliases:
+          - zbx-server
+      zbx_net_frontend:
+      
+  zbx_web:
+    image: zabbix/zabbix-web-apache-pgsql:centos-4.2.1
+    environment:  
+      ZBX_SERVER_HOST: zbx_server
+      DB_SERVER_HOST: zbx_db
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: zabbix
+    ports:
+      - 80:80
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    links:
+      - zbx_db:zbx_db
+      - zbx_server:zbx_server
+    depends_on:
+      - zbx_db
+      - zbx_server
+    networks:
+      zbx_net_backend:
+        aliases:
+          - zbx-web
+      zbx_net_frontend:
+    stop_grace_period: 10s
+
+  zbx_agent:
+    image: zabbix/zabbix-agent:centos-4.2.1
+    environment:
+      ZBX_SERVER_HOST: zbx_server
+      ZBX_METADATA: my_zabbix_agent
+      ZBX_ACTIVE_ALLOW: "true"
+#      ZBX_DEBUGLEVEL: 4
+    links:
+      - zbx_server:zbx_server
+    depends_on:
+      - zbx_server
+    networks:
+      zbx_net_frontend:
+    command: "true"
+    entrypoint: "true"
+          
+networks:
+  zbx_net_frontend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
+  zbx_net_backend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.239.0/24
+
