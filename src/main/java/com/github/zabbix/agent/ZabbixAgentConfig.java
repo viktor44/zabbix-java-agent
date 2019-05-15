@@ -3,8 +3,10 @@ package com.github.zabbix.agent;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,9 +96,36 @@ public class ZabbixAgentConfig
 	@Getter
 	private String logFile;
 
+	// for test only
+	ZabbixAgentConfig()
+	{
+	}
+	
 	public ZabbixAgentConfig(String configFilePath)
 	{
-		Map<String, String> configItems = loadConfig(configFilePath);
+		Map<String, String> configItems = Collections.emptyMap();
+		Reader reader = null;
+		try
+		{
+			reader = new FileReader(configFilePath);
+			configItems = loadConfig(reader);
+		}
+		catch (IOException ex)
+		{
+			throw new IllegalArgumentException(ex.getMessage(), ex);
+		}
+		finally 
+		{
+			if (reader != null)
+				try
+				{
+					reader.close();
+				}
+				catch (Exception ex)
+				{
+					// DO NOTHING
+				}
+		}
 		
 		servers = ServerAddress.parse(getStringParam(configItems, "Server"));
 		listenPort = getIntParam(configItems, "ListenPort", DEFAULT_LISTEN_PORT);
@@ -119,49 +148,30 @@ public class ZabbixAgentConfig
 			throw new IllegalArgumentException("Missing required config parameter 'LogFile'");
 	}
 	
-	private Map<String, String> loadConfig(String configFilePath)
+	private Map<String, String> loadConfig(Reader reader) throws IOException
 	{
 		Map<String, String> result = new HashMap<>();
 		
-		BufferedReader reader = null;
-		try
+		BufferedReader bufferedReader = new BufferedReader(reader);
+		int lineNum = 0;
+		String line;
+		while ((line = bufferedReader.readLine()) != null)
 		{
-			reader = new BufferedReader(new FileReader(configFilePath));
-			int lineNum = 0;
-			String line;
-			while ((line = reader.readLine()) != null)
-			{
-				lineNum++;
-				if (isComment(line))
-					continue;
-				if ("".equals(line.trim()))
-					continue;
-				int index = line.indexOf('=');
-				if (index < 0)
-					throw new IllegalArgumentException("Invalid config file syntax at line " + lineNum);
-				String key = line.substring(0, index).trim();
-				String value = line.substring(index + 1).trim();
-				if (result.containsKey(key))
-					throw new IllegalArgumentException("Duplicate parameter '" + key + "' at line " + lineNum);
-				result.put(key, value);
-			}
+			lineNum++;
+			if (isComment(line))
+				continue;
+			if ("".equals(line.trim()))
+				continue;
+			int index = line.indexOf('=');
+			if (index < 0)
+				throw new IllegalArgumentException("Invalid config file syntax at line " + lineNum);
+			String key = line.substring(0, index).trim();
+			String value = line.substring(index + 1).trim();
+			if (result.containsKey(key))
+				throw new IllegalArgumentException("Duplicate parameter '" + key + "' at line " + lineNum);
+			result.put(key, value);
 		}
-		catch (IOException ex)
-		{
-			throw new IllegalArgumentException(ex.getMessage(), ex);
-		}
-		finally 
-		{
-			if (reader != null)
-				try
-				{
-					reader.close();
-				}
-				catch (Exception ex)
-				{
-					// DO NOTHING
-				}
-		}
+		
 		return result;
 	}
 	
@@ -191,6 +201,13 @@ public class ZabbixAgentConfig
 	private String getStringParam(Map<String, String> configItems, String paramName, String defaultValue)
 	{
 		String result = configItems.get(paramName);
+		String envKey = makeEnvKey(paramName, "ZBX");
+		String envValue = System.getenv(envKey);
+		if (envValue != null)
+		{
+			System.out.println("Parameter '" + paramName + "' was replaced from environment variable '" + envKey + "'");
+			result = envValue;
+		}
 		if (result == null) 
 			result = defaultValue;
 		else
@@ -227,12 +244,31 @@ public class ZabbixAgentConfig
 		return activeServers.get(index);
 	}
 
+	String makeEnvKey(String key, String prefix)
+	{
+		StringBuilder envKey = new StringBuilder(prefix != null ? prefix : "");
+		if (envKey.length() > 0)
+			envKey.append('_');
+		boolean secondDigit = false;
+		for (int i = 0; i < key.length(); i++)
+		{
+			char ch = key.charAt(i);
+			if (i > 0 
+					&& (Character.isUpperCase(ch)
+							|| (Character.isDigit(ch) && !secondDigit)))
+				envKey.append('_');
+			secondDigit = Character.isDigit(ch);
+			envKey.append(Character.toUpperCase(ch));
+		}
+		return envKey.toString();
+	}
+
 //	public static void main(String[] args)
 //	{
 //		System.out.println("Name: " + getComputerHostname());
 //	}
 	
-	private static String getComputerHostname()
+	private String getComputerHostname()
 	{
 		// try InetAddress.LocalHost first;
 		// NOTE -- InetAddress.getLocalHost().getHostName() will not work in certain environments.
