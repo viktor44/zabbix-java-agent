@@ -20,6 +20,21 @@ Supported configuration parameters:
 
 | Parameter | Mandatory | Range | Default | Description |
 |---|---|---|---|---|
+| BufferSend | no | 1-3600 | 5 | 
+Do not keep data longer than N seconds in buffer. 
+|
+| BufferSize | no | 2-65535 | 100 | 
+Maximum number of values in a memory buffer. The agent will send all collected data to Zabbix server or proxy if the buffer is full. 
+|
+| DebugLevel | no | 0-5 | 3 | 
+Specifies debug level:
+0. - basic information about starting and stopping of Zabbix processes
+1. - critical information
+2. - error information
+3. - warnings
+4. - for debugging (produces lots of information)
+5. - extended debugging (produces even more information)
+|
 |   |   |   |   |   |
 |   |   |   |   |   |
 |   |   |   |   |   |
