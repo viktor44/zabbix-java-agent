@@ -6,9 +6,9 @@
 	<version>0.1.0-SNAPSHOT</version>
 
 	<description>
-    
+    	Zabbix agent for Java applications.
 	</description>
-	<url>http://github.com/</url>
+	<url>https://github.com/Z-z-z-z/zabbix-java-agent</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,7 +26,7 @@
 					<source>${java.version}</source>
 					<target>${java.version}</target>
 				</configuration>
-					</plugin>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
