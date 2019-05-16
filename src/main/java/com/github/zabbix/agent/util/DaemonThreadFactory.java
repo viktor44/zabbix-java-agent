@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author Victor Kadachigov
  */
-public class DaemonThreadFactory implements ThreadFactory {
-
+public class DaemonThreadFactory implements ThreadFactory 
+{
     private String namePrefix;
     private AtomicInteger counter;
     private ThreadFactory dtf = Executors.defaultThreadFactory();
