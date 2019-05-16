@@ -141,7 +141,7 @@ public class ZabbixAgentConfig
 		activeServers = ServerAddress.parse(getStringParam(configItems, "ServerActive"));
 		timeout = getIntParam(configItems, "Timeout", DEFAULT_TIMEOUT);
 		debugLevel = getIntParam(configItems, "DebugLevel", DEFAULT_DEBUG_LEVEL);
-		logType = LogType.valueOf(getStringParam(configItems, "HostMetadataItem", LogType.CONSOLE.name()).toUpperCase());
+		logType = LogType.valueOf(getStringParam(configItems, "HostMetadataItem", LogType.FILE.name()).toUpperCase());
 		logFile = getStringParam(configItems, "LogFile");
 		if ((logType == LogType.FILE || logType == LogType.ALL)
 				&& (logFile == null || "".equals(logFile)))
