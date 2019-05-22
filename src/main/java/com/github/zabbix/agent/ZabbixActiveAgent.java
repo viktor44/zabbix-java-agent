@@ -111,7 +111,8 @@ public class ZabbixActiveAgent implements Runnable
 		}
 		catch (Exception ex)
 		{
-			log.log(Level.SEVERE, ex.getMessage(), ex);
+			log.log(Level.SEVERE, "{0}: {1}", new Object[] { ex.getClass().getName(), ex.getMessage() });
+			log.log(Level.FINE, ex.getMessage(), ex);
 		}
 		
 		lastResultsSendTime = System.currentTimeMillis();
@@ -125,7 +126,6 @@ public class ZabbixActiveAgent implements Runnable
 		if (System.currentTimeMillis() - lastRefreshCheckTime < t)
 			return;
 
-		connected = false;
 		try
 		{
 			Set<CheckItem> checkItems = protocol.refreshActiveChecks();
@@ -134,11 +134,18 @@ public class ZabbixActiveAgent implements Runnable
 		}
 		catch (ZabbixException ex) 
 		{
-			log.severe(ex.getMessage());
+			if (connected)
+				log.severe(ex.getMessage());
+			connected = false;
 		}
 		catch (Exception ex)
 		{
-			log.log(Level.SEVERE, ex.getMessage(), ex);
+			if (connected)
+			{
+				log.log(Level.SEVERE, "{0}: {1}", new Object[] { ex.getClass().getName(), ex.getMessage() });
+				log.log(Level.FINE, ex.getMessage(), ex);
+			}
+			connected = false;
 		}
 		
 		lastRefreshCheckTime = System.currentTimeMillis();

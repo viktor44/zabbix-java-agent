@@ -103,7 +103,7 @@ public class Protocol
 		} 
         catch (JSONException | IOException ex) 
         {
-        	throw new ZabbixException("Failed to connect to " + serverAddress + ". Will try to connect later. " + ex.getMessage());
+        	throw new ZabbixException("Error while refreshing checks: " + ex.getMessage());
 		} 
         finally 
         {
@@ -120,14 +120,22 @@ public class Protocol
 		return result;
 	}
 	
-	private Socket openSocket() throws IOException
+	private Socket openSocket() throws ZabbixException
 	{
-		log.log(Level.FINE, "Connecting to {0}", serverAddress);
+		try
+		{
+			log.log(Level.FINE, "Connecting to {0}", serverAddress);
 
-		Socket result = new Socket();
-		result.connect(serverAddress.getSocketAddress(), config.getTimeout() * 1000);
-//		result.setSoTimeout(config.getTimeout() * 1000);
-		return result;
+			Socket result = new Socket();
+			result.connect(serverAddress.getSocketAddress(), config.getTimeout() * 1000);
+//			result.setSoTimeout(config.getTimeout() * 1000);
+			
+			return result;
+		}
+        catch (IOException ex) 
+        {
+        	throw new ZabbixException("Failed to connect to " + serverAddress + ". Will try to connect later. " + ex.getMessage());
+		} 
 	}
 	
 	private String read(InputStream inputStream) throws IOException
