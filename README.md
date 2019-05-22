@@ -1,3 +1,4 @@
+
 # Zabbix Agent for Java
 
 ## Overview
@@ -32,5 +33,19 @@ Supported configuration parameters:
 | Timeout | no | 1-30 | 3 | Spend no more than Timeout seconds on processing |
 |   |   |   |   |   |
 
+You can override file configuration parameters with environment variables
 
+| Parameter | Variable |
+|--|--|
+| BufferSend | ZBX_BUFFER_SEND |
+| BufferSize | ZBX_BUFFER_SIZE |
+| DebugLevel | ZBX_DEBUG_LEVEL |
+| HostMetadata | ZBX_HOST_METADATA |
+| Hostname | ZBX_HOSTNAME |
+| LogFile | ZBX_LOG_FILE |
+| LogType | ZBX_LOG_TYPE |
+| RefreshActiveChecks | ZBX_REFRESH_ACTIVE_CHECKS |
+| ServerActive | ZBX_SERVER_ACTIVE |
+| Timeout | ZBX_TIMEOUT |
+|  |  |
 
