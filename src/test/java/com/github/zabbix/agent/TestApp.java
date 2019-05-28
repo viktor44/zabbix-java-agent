@@ -18,6 +18,7 @@ public class TestApp
 //			System.out.println("" + k + "=" + System.getProperty(k.toString()));
 		
 		ZabbixAgent client = new ZabbixAgent("D:\\Projects\\zabbix-java-agent\\zabbix-java-agent\\etc\\zabbix_agentd.conf");
+		client.start();
 		
 		System.in.read();
 	}
