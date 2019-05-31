@@ -83,7 +83,7 @@ public class CheckerTask implements Runnable
 				else
 				{
 					// something wrong. remove until next refresh
-					log.log(Level.FINE, "Remove {0} from checks", checkItem.getKey().getKey());
+					log.log(Level.FINE, "Remove \"{0}\" from checks", checkItem.getKey().getKey());
 					iterator.remove();
 				}
 			}
@@ -144,8 +144,7 @@ public class CheckerTask implements Runnable
 		}
 		else if (key.getKeyId().equals("jmx.discovery"))
 		{
-			
-			throw new UnsupportedOperationException("Not implemented");
+			log.log(Level.FINE, "Not implemented");
 			
 //			int argumentCount = key.getArgumentCount();
 //			if (argumentCount > 2)
@@ -181,10 +180,11 @@ public class CheckerTask implements Runnable
 //			return mapping.toString();
 		}
 		else
-			throw new ZabbixException("key ID '" + key.getKeyId() + "' is not supported");
+			log.log(Level.FINE, "Key ID \"{0}\" is not supported", key.getKeyId());
+		
+		return null;
 	}
 
-	
 	private String getPrimitiveAttributeValue(Object dataObject, String fieldNames) throws Exception
 	{
 		if (dataObject == null)
