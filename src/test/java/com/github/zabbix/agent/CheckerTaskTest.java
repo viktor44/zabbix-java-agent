@@ -105,7 +105,7 @@ public class CheckerTaskTest
 					CheckItem.builder().key(new ZabbixKey(key)).build()
 			);
 		
-		CheckerTask checkerTask = new CheckerTask(checkItems, null, resultsQueue);
+		CheckerTask checkerTask = new CheckerTask(checkItems, null, resultsQueue, 0);
 		checkerTask.run();
 	}
 }

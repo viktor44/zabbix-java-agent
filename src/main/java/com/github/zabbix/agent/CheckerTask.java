@@ -4,26 +4,26 @@ import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import javax.management.InstanceNotFoundException;
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanServer;
-import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularDataSupport;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.github.zabbix.agent.data.CheckItem;
@@ -49,18 +49,25 @@ public class CheckerTask implements Runnable
 	
 	private Set<CheckItem> checkItems;
 	private MBeanServer mbServer;
+	private int delay;
 
-	public CheckerTask(Set<CheckItem> checkItems, ZabbixAgentConfig config, Queue<CheckResult> resultsQueue)
+	public CheckerTask(Set<CheckItem> checkItems, ZabbixAgentConfig config, Queue<CheckResult> resultsQueue, int delay)
 	{
 		this.checkItems = checkItems;
 		this.config = config;
 		this.resultsQueue = resultsQueue;
+		this.delay = delay;
 	}
 
 	@Override
 	public void run()
 	{
-		log.info("Start checks");
+		long start = 0;
+		if (log.isLoggable(Level.INFO))
+		{
+			start = System.currentTimeMillis();
+			log.log(Level.INFO, "Start {0} checks. Period {1}s", new Object[] { checkItems.size(), delay } );
+		}
 		
 		try
 		{
@@ -93,9 +100,41 @@ public class CheckerTask implements Runnable
 			log.log(Level.SEVERE, ex.getMessage(), ex);
 		}
 		
-		log.info("End checks");
+		if (log.isLoggable(Level.INFO))
+		{
+			long end = System.currentTimeMillis();
+			log.log(Level.INFO, "End checks. Period {0}s. Work time: {1}", new Object[] { delay, timeToLog(end - start) });
+		}
 	}
 	
+	private String timeToLog(long interval)
+	{
+        long ms = interval % 1000;
+        interval /= 1000;
+        long sec = interval % 60;
+        interval /= 60;
+        long min = interval % 60;
+        long hr = interval / 60;
+        StringBuilder sb = new StringBuilder();
+        if (hr > 0)
+        {
+        	if (hr < 10) sb.append('0');
+       		sb.append(hr).append(':');
+        }
+        if (min < 10) sb.append('0');
+       	sb.append(min).append(':');
+        if (sec < 10) sb.append('0');
+       	sb.append(sec).append('.');
+        if (ms < 10) 
+        	sb.append("00");
+        else if (ms < 100)
+        	sb.append('0');
+        sb.append(ms);
+		return sb.toString();
+	}
+	
+	
+
 	protected String getStringValue(ZabbixKey key) throws Exception
 	{
 		if (key.getKeyId().equals("jmx"))
@@ -144,40 +183,40 @@ public class CheckerTask implements Runnable
 		}
 		else if (key.getKeyId().equals("jmx.discovery"))
 		{
-			log.log(Level.FINE, "Not implemented");
+//			log.log(Level.FINE, "Not implemented");
 			
-//			int argumentCount = key.getArgumentCount();
-//			if (argumentCount > 2)
-//				throw new ZabbixException("required key format: jmx.discovery[<discovery mode>,<object name>]");
-//
-//			JSONArray counters = new JSONArray();
-//			ObjectName filter = (argumentCount == 2) ? new ObjectName(key.getArgument(2)) : null;
-//
-//			DiscoveryMode mode = DiscoveryMode.ATTRIBUTES;
-//			if (0 != argumentCount)
-//			{
-//				String modeName = key.getArgument(1);
-//
-//				if (modeName.equals("beans"))
-//					mode = DiscoveryMode.BEANS;
-//				else if (!modeName.equals("attributes"))
-//					throw new ZabbixException("invalid discovery mode: " + modeName);
-//			}
-//
-//			for (ObjectName name : mbServer.queryNames(filter, null))
-//			{
-//				if (log.isLoggable(Level.FINE))
-//					log.fine("discovered object '" + name + "'");
-//
-//				if (mode == DiscoveryMode.ATTRIBUTES)
-//					discoverAttributes(counters, name);
-//				else
-//					discoverBeans(counters, name);
-//			}
-//
-//			JSONObject mapping = new JSONObject();
-//			mapping.put(ItemChecker.JSON_TAG_DATA, counters);
-//			return mapping.toString();
+			int argumentCount = key.getArgumentCount();
+			if (argumentCount > 2)
+				throw new ZabbixException("required key format: jmx.discovery[<discovery mode>,<object name>]");
+
+			JSONArray counters = new JSONArray();
+			ObjectName filter = (argumentCount == 2) ? new ObjectName(key.getArgument(2)) : null;
+
+			DiscoveryMode mode = DiscoveryMode.ATTRIBUTES;
+			if (0 != argumentCount)
+			{
+				String modeName = key.getArgument(1);
+
+				if (modeName.equals("beans"))
+					mode = DiscoveryMode.BEANS;
+				else if (!modeName.equals("attributes"))
+					throw new ZabbixException("invalid discovery mode: " + modeName);
+			}
+
+			for (ObjectName name : mbServer.queryNames(filter, null))
+			{
+				if (log.isLoggable(Level.FINE))
+					log.fine("discovered object '" + name + "'");
+
+				if (mode == DiscoveryMode.ATTRIBUTES)
+					discoverAttributes(counters, name);
+				else
+					discoverBeans(counters, name);
+			}
+
+			JSONObject mapping = new JSONObject();
+			mapping.put(Protocol.JSON_TAG_DATA, counters);
+			return mapping.toString();
 		}
 		else
 			log.log(Level.FINE, "Key ID \"{0}\" is not supported", key.getKeyId());
@@ -290,4 +329,121 @@ public class CheckerTask implements Runnable
 		this.checkItems = checkItems;
 	}
 
+	private void discoverAttributes(JSONArray counters, ObjectName name) throws Exception
+	{
+		for (MBeanAttributeInfo attrInfo : mbServer.getMBeanInfo(name).getAttributes())
+		{
+			log.log(Level.FINE, "discovered attribute \"{0}\"", attrInfo.getName());
+
+			if (!attrInfo.isReadable())
+			{
+				log.log(Level.FINE, "attribute not readable, skipping");
+				continue;
+			}
+
+			try
+			{
+				log.log(Level.FINE, "looking for attributes of primitive types");
+				String descr = (attrInfo.getName().equals(attrInfo.getDescription()) ? null : attrInfo.getDescription());
+				findPrimitiveAttributes(counters, name, descr, attrInfo.getName(), mbServer.getAttribute(name, attrInfo.getName()));
+			}
+			catch (Exception e)
+			{
+				Object[] logInfo = {name, attrInfo.getName(), getRootCauseMessage(e)};
+				log.log(Level.WARNING, "attribute processing \"{0},{1}\" failed: {2}", logInfo);
+				log.log(Level.FINE, "error caused by", e);
+			}
+		}
+	}
+
+	private void findPrimitiveAttributes(JSONArray counters, ObjectName name, String descr, String attrPath, Object attribute) throws NoSuchMethodException, JSONException
+	{
+		log.log(Level.FINE, "drilling down with attribute path \"{0}\"", attrPath);
+
+		if (isPrimitiveAttributeType(attribute))
+		{
+			log.log(Level.FINE, "found attribute of a primitive type: {0}", attribute.getClass());
+
+			JSONObject counter = new JSONObject();
+
+			counter.put("{#JMXDESC}", null == descr ? name + "," + attrPath : descr);
+			counter.put("{#JMXOBJ}", name);
+			counter.put("{#JMXATTR}", attrPath);
+			counter.put("{#JMXTYPE}", attribute.getClass().getName());
+			counter.put("{#JMXVALUE}", attribute.toString());
+
+			counters.put(counter);
+		}
+		else if (attribute instanceof CompositeData)
+		{
+			log.log(Level.FINE, "found attribute of a composite type: {0}", attribute.getClass());
+
+			CompositeData comp = (CompositeData)attribute;
+
+			for (String key : comp.getCompositeType().keySet())
+				findPrimitiveAttributes(counters, name, descr, attrPath + "." + key, comp.get(key));
+		}
+		else if (attribute instanceof TabularDataSupport || attribute.getClass().isArray())
+		{
+			log.log(Level.FINE, "found attribute of a known, unsupported type: {0}", attribute.getClass());
+		}
+		else
+			log.log(Level.FINE, "found attribute of an unknown, unsupported type: {0}", attribute.getClass());
+	}
+
+	private void discoverBeans(JSONArray counters, ObjectName name)
+	{
+		try
+		{
+			HashSet<String> properties = new HashSet<>();
+			JSONObject counter = new JSONObject();
+
+			// Default properties are added.
+			counter.put("{#JMXOBJ}", name);
+			counter.put("{#JMXDOMAIN}", name.getDomain());
+			properties.add("OBJ");
+			properties.add("DOMAIN");
+
+			for (Map.Entry<String, String> property : name.getKeyPropertyList().entrySet())
+			{
+				String key = property.getKey().toUpperCase();
+
+				// Property key should only contain valid characters and should not be already added to attribute list.
+				if (key.matches("^[A-Z0-9_\\.]+$") && !properties.contains(key))
+				{
+					counter.put("{#JMX" + key + "}" , property.getValue());
+					properties.add(key);
+				}
+				else
+					log.log(Level.FINE, "bean \"{0}\" property \"{1}\" was ignored", new Object[] { name, property.getKey() });
+			}
+
+			counters.put(counter);
+		}
+		catch (Exception e)
+		{
+			log.log(Level.WARNING, "bean processing \"{0}\" failed: {1}", new Object[] { name, getRootCauseMessage(e) });
+			log.log(Level.FINE, "error caused by", e);
+		}
+	}
+
+	Throwable getRootCause(Throwable e)
+	{
+		Throwable cause = null;
+		Throwable result = e;
+
+		while (((cause = result.getCause()) != null) && result != cause)
+			result = cause;
+
+		return result;
+	}
+	
+	String getRootCauseMessage(Throwable e)
+	{
+		if (e != null)
+			return getRootCause(e).getMessage();
+
+		return null;
+	}
+	
 }

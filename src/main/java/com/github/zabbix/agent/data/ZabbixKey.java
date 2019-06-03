@@ -77,7 +77,7 @@ public class ZabbixKey
 				args.add("");
 				break;
 			}
-			else if (' ' == keyArgs.charAt(0))
+			else if (keyArgs.charAt(0) == ' ')
 			{
 				keyArgs = keyArgs.substring(1);
 			}

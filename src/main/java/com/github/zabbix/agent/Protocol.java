@@ -43,14 +43,14 @@ public class Protocol
 	private static final byte[] PROTOCOL_HEADER = {'Z', 'B', 'X', 'D', '\1'};
 	private static final Charset DEFAULT_ENCODING = Charset.forName("UTF-8");
 	
-	private static final String JSON_TAG_REQUEST = "request";
-	private static final String JSON_TAG_RESPONSE = "response";
-	private static final String JSON_TAG_INFO = "info";
-	private static final String JSON_TAG_DATA = "data";
-	private static final String JSON_TAG_KEY = "key";
-	private static final String JSON_TAG_HOST = "host";
-	private static final String JSON_TAG_CLOCK = "clock";
-	private static final String JSON_TAG_VALUE = "value";
+	public static final String JSON_TAG_REQUEST = "request";
+	public static final String JSON_TAG_RESPONSE = "response";
+	public static final String JSON_TAG_INFO = "info";
+	public static final String JSON_TAG_DATA = "data";
+	public static final String JSON_TAG_KEY = "key";
+	public static final String JSON_TAG_HOST = "host";
+	public static final String JSON_TAG_CLOCK = "clock";
+	public static final String JSON_TAG_VALUE = "value";
 
 	private static final String JSON_RESPONSE_FAILED = "failed";
 	private static final String JSON_RESPONSE_SUCCESS = "success";

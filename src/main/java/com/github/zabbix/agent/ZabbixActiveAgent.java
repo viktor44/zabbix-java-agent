@@ -187,7 +187,10 @@ public class ZabbixActiveAgent implements Runnable
 			}
 		}
 		for (Integer d : toDelete)
-			checkerTasks.remove(d);
+		{
+			Pair<CheckerTask, ScheduledFuture<?>> pair = checkerTasks.remove(d);
+			pair.value.cancel(true);
+		}
 		
 		// insert, update
 		for (Map.Entry<Integer, Set<CheckItem>> entry : map.entrySet())
@@ -197,7 +200,7 @@ public class ZabbixActiveAgent implements Runnable
 			{
 				log.log(Level.FINE, "Start {0} checks with delay {1}s", new Object[] {entry.getValue().size(), entry.getKey()});
 				task = new Pair<>();
-				task.setKey(new CheckerTask(checkItems, config, resultsQueue));
+				task.setKey(new CheckerTask(checkItems, config, resultsQueue, entry.getKey()));
 				task.setValue(scheduler.scheduleAtFixedRate(task.getKey(), 1, entry.getKey(), TimeUnit.SECONDS));
 			}
 			else // update
