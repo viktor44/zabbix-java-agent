@@ -63,7 +63,7 @@ public class ZabbixActiveAgent implements Runnable
 	{
 		state = State.ACTIVE;
 		lastResultsSendTime = System.currentTimeMillis();
-		scheduler = Executors.newScheduledThreadPool(0, new DaemonThreadFactory("zabbix-agent-pool"));
+		scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("zabbix-agent-pool"));
 		
 		while (state == State.ACTIVE)
 		{
