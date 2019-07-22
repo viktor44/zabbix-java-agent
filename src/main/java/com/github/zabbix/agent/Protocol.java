@@ -144,7 +144,7 @@ public class Protocol
 
 		byte[] data;
 
-		log.fine("reading Zabbix protocol header");
+		log.finest("reading Zabbix protocol header");
 		
 		data = new byte[5];
 		dis.readFully(data);
@@ -156,7 +156,7 @@ public class Protocol
 							).toString()
 					);
 
-		log.fine("reading 8 bytes of data length");
+		log.finest("reading 8 bytes of data length");
 		
 		data = new byte[8];
 		dis.readFully(data);
@@ -168,7 +168,7 @@ public class Protocol
 		if (!(0 <= length && length <= Integer.MAX_VALUE))
 			throw new RuntimeException("bad data length: " + length);
 
-		log.log(Level.FINE, "reading {0} bytes from server", length);
+		log.log(Level.FINEST, "reading {0} bytes from server", length);
 		
 		data = new byte[(int)length];
 		dis.readFully(data);

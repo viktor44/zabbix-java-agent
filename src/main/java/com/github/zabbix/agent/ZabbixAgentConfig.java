@@ -178,7 +178,7 @@ public class ZabbixAgentConfig
 	private int getIntParam(Map<String, String> configItems, String paramName, int defaultValue)
 	{
 		int result = defaultValue;
-		String value = configItems.get(paramName);
+		String value = getStringParam(configItems, paramName, null);
 		if (value != null)
 		{
 			try
@@ -232,6 +232,11 @@ public class ZabbixAgentConfig
 	public boolean isActiveMode()
 	{
 		return !activeServers.isEmpty();
+	}
+
+	public boolean isPassiveMode()
+	{
+		return !servers.isEmpty();
 	}
 	
 	public int getActiveServersCount()

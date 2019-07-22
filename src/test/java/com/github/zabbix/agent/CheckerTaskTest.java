@@ -36,7 +36,7 @@ public class CheckerTaskTest
 	}
 	
 	@Test
-	public void test() throws Exception
+	public void testJmx() throws Exception
 	{
 		Queue<CheckResult> resultsQueue = new ArrayBlockingQueue<>(1000);
 		Set<CheckItem> checkItems = new HashSet<>();
@@ -107,5 +107,59 @@ public class CheckerTaskTest
 		
 		CheckerTask checkerTask = new CheckerTask(checkItems, null, resultsQueue, 0);
 		checkerTask.run();
+
+		//FIXME: do checks
+	}
+	
+	@Test
+	public void testJmxDiscovery() throws Exception
+	{
+		Queue<CheckResult> resultsQueue = new ArrayBlockingQueue<>(1000);
+		Set<CheckItem> checkItems = new HashSet<>();
+
+		String keys[] = new String[] 
+				{
+					"jmx.discovery[attributes, \"metrics:name=service*\"]", 
+				};
+
+		for (String key : keys)
+			checkItems.add(
+					CheckItem.builder().key(new ZabbixKey(key)).build()
+			);
+		
+		CheckerTask checkerTask = new CheckerTask(checkItems, null, resultsQueue, 0);
+		checkerTask.run();
+
+		//FIXME: do checks
+	}
+	
+	@Test
+	public void testJmxDiscoveryAttributes() throws Exception
+	{
+		Queue<CheckResult> resultsQueue = new ArrayBlockingQueue<>(1000);
+		Set<CheckItem> checkItems = new HashSet<>();
+
+		ZabbixKey key = new ZabbixKey("jmx.discovery[attributes, \"java.lang:type=MemoryPool,name=PS*\"]");
+		CheckerTask checkerTask = new CheckerTask(checkItems, null, resultsQueue, 0);
+		
+		String s = checkerTask.getStringValue(key);
+		log.info("Result: " + s);
+		
+		//FIXME: do checks
+	}
+	
+	@Test
+	public void testJmxDiscoveryBeans() throws Exception
+	{
+		Queue<CheckResult> resultsQueue = new ArrayBlockingQueue<>(1000);
+		Set<CheckItem> checkItems = new HashSet<>();
+
+		ZabbixKey key = new ZabbixKey("jmx.discovery[beans, \"java.lang:type=MemoryPool,name=PS*\"]");
+		CheckerTask checkerTask = new CheckerTask(checkItems, null, resultsQueue, 0);
+		
+		String s = checkerTask.getStringValue(key);
+		log.info("Result: " + s);
+
+		//FIXME: do checks
 	}
 }

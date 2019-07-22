@@ -28,13 +28,20 @@ public class ZabbixAgent
 	{
 		config = new ZabbixAgentConfig(configFilePath);
 		initLogger();
-		log.fine("" + config);
+		log.log(Level.FINE, "{0}", config);
 	}
 	
 	public void start()
 	{
+		boolean somethingStarted = false;
+		
+		if (config.isPassiveMode())
+			somethingStarted |= startPassiveAgent();
 		if (config.isActiveMode())
-			startActiveAgent();
+			somethingStarted |= startActiveAgent();
+		
+		if (!somethingStarted)
+			log.warning("No Zabbix agents started");
 	}
 
 	private void initLogger()
@@ -58,8 +65,10 @@ public class ZabbixAgent
 				level = Level.INFO;
 				break;
 			case 4:
-			case 5:
 				level = Level.FINE;
+				break;
+			case 5:
+				level = Level.FINEST;
 				break;
 			default:
 				throw new IllegalArgumentException("Invalid DebugLevel value " + config.getDebugLevel());
@@ -94,23 +103,32 @@ public class ZabbixAgent
 //			handler.setLevel(level);
 	}
 
-	private void startActiveAgent()
+	private boolean startActiveAgent()
 	{
 		activeAgents = new ArrayList<>();
 		
 		for (int i = 0; i < config.getActiveServersCount(); i++)
 		{
+			if (i > 0) // start only one agent for now.
+			{
+				log.warning("Only first active server address was used");
+				break;
+			}
 			ZabbixActiveAgent a = new ZabbixActiveAgent(config, i);
 			activeAgents.add(a);
 			Thread thread = new Thread(a);
 			thread.setName(a.getName());
 			thread.setDaemon(true);
 			thread.start();
-			
-			// start only one agent for now.
-			break;
 		}
+		
+		return !activeAgents.isEmpty();
 	}
 	
-	
+	private boolean startPassiveAgent()
+	{
+		log.warning("Passive mode is not implemented yet");
+		
+		return false;
+	}
 }

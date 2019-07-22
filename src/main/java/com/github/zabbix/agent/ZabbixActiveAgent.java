@@ -103,7 +103,7 @@ public class ZabbixActiveAgent implements Runnable
 				resultsQueue.removeAll(checksToSend);
 			}
 			else
-				log.fine("No data to send");
+				log.finest("No data to send");
 		}
 		catch (ZabbixException ex) 
 		{
@@ -200,7 +200,7 @@ public class ZabbixActiveAgent implements Runnable
 			{
 				log.log(Level.FINE, "Start {0} checks with delay {1}s", new Object[] {entry.getValue().size(), entry.getKey()});
 				task = new Pair<>();
-				task.setKey(new CheckerTask(checkItems, config, resultsQueue, entry.getKey()));
+				task.setKey(new CheckerTask(entry.getValue(), config, resultsQueue, entry.getKey()));
 				task.setValue(scheduler.scheduleAtFixedRate(task.getKey(), 1, entry.getKey(), TimeUnit.SECONDS));
 			}
 			else // update

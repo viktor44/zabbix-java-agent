@@ -58,7 +58,7 @@ public class CheckerTask implements Runnable
 		this.resultsQueue = resultsQueue;
 		this.delay = delay;
 	}
-
+	
 	@Override
 	public void run()
 	{
@@ -71,8 +71,6 @@ public class CheckerTask implements Runnable
 		
 		try
 		{
-			mbServer = ManagementFactory.getPlatformMBeanServer();
-			
 			Iterator<CheckItem> iterator = checkItems.iterator();
 			while (iterator.hasNext())
 			{
@@ -156,7 +154,7 @@ public class CheckerTask implements Runnable
 
 			if (sep >= 0)
 			{
-				log.log(Level.FINE, "\"{0}\" contains composite data", attributeName);
+				log.log(Level.FINEST, "\"{0}\" contains composite data", attributeName);
 
 				realAttributeName = attributeName.substring(0, sep);
 				fieldNames = attributeName.substring(sep + 1);
@@ -167,13 +165,13 @@ public class CheckerTask implements Runnable
 			// unescape possible dots or backslashes that were escaped by user
 			realAttributeName = unescapeUserInput(realAttributeName);
 
-			log.log(Level.FINE, "attributeName: \"{0}\"", realAttributeName);
-			log.log(Level.FINE, "fieldNames: \"{0}\"", fieldNames);
+			log.log(Level.FINEST, "attributeName: \"{0}\"", realAttributeName);
+			log.log(Level.FINEST, "fieldNames: \"{0}\"", fieldNames);
 
 			String result = null;
 			try
 			{
-				result = getPrimitiveAttributeValue(mbServer.getAttribute(objectName, realAttributeName), fieldNames);
+				result = getPrimitiveAttributeValue(getMbServer().getAttribute(objectName, realAttributeName), fieldNames);
 			}
 			catch (OperationsException ex)
 			{
@@ -183,8 +181,6 @@ public class CheckerTask implements Runnable
 		}
 		else if (key.getKeyId().equals("jmx.discovery"))
 		{
-//			log.log(Level.FINE, "Not implemented");
-			
 			int argumentCount = key.getArgumentCount();
 			if (argumentCount > 2)
 				throw new ZabbixException("required key format: jmx.discovery[<discovery mode>,<object name>]");
@@ -203,10 +199,9 @@ public class CheckerTask implements Runnable
 					throw new ZabbixException("invalid discovery mode: " + modeName);
 			}
 
-			for (ObjectName name : mbServer.queryNames(filter, null))
+			for (ObjectName name : getMbServer().queryNames(filter, null))
 			{
-				if (log.isLoggable(Level.FINE))
-					log.fine("discovered object '" + name + "'");
+				log.log(Level.FINEST, "discovered object \"{0}\"", name);
 
 				if (mode == DiscoveryMode.ATTRIBUTES)
 					discoverAttributes(counters, name);
@@ -331,21 +326,21 @@ public class CheckerTask implements Runnable
 
 	private void discoverAttributes(JSONArray counters, ObjectName name) throws Exception
 	{
-		for (MBeanAttributeInfo attrInfo : mbServer.getMBeanInfo(name).getAttributes())
+		for (MBeanAttributeInfo attrInfo : getMbServer().getMBeanInfo(name).getAttributes())
 		{
-			log.log(Level.FINE, "discovered attribute \"{0}\"", attrInfo.getName());
+			log.log(Level.FINEST, "discovered attribute \"{0}\"", attrInfo.getName());
 
 			if (!attrInfo.isReadable())
 			{
-				log.log(Level.FINE, "attribute not readable, skipping");
+				log.log(Level.FINEST, "attribute not readable, skipping");
 				continue;
 			}
 
 			try
 			{
-				log.log(Level.FINE, "looking for attributes of primitive types");
+				log.log(Level.FINEST, "looking for attributes of primitive types");
 				String descr = (attrInfo.getName().equals(attrInfo.getDescription()) ? null : attrInfo.getDescription());
-				findPrimitiveAttributes(counters, name, descr, attrInfo.getName(), mbServer.getAttribute(name, attrInfo.getName()));
+				findPrimitiveAttributes(counters, name, descr, attrInfo.getName(), getMbServer().getAttribute(name, attrInfo.getName()));
 			}
 			catch (Exception e)
 			{
@@ -358,11 +353,11 @@ public class CheckerTask implements Runnable
 
 	private void findPrimitiveAttributes(JSONArray counters, ObjectName name, String descr, String attrPath, Object attribute) throws NoSuchMethodException, JSONException
 	{
-		log.log(Level.FINE, "drilling down with attribute path \"{0}\"", attrPath);
+		log.log(Level.FINEST, "drilling down with attribute path \"{0}\"", attrPath);
 
 		if (isPrimitiveAttributeType(attribute))
 		{
-			log.log(Level.FINE, "found attribute of a primitive type: {0}", attribute.getClass());
+			log.log(Level.FINEST, "found attribute of a primitive type: {0}", attribute.getClass());
 
 			JSONObject counter = new JSONObject();
 
@@ -376,7 +371,7 @@ public class CheckerTask implements Runnable
 		}
 		else if (attribute instanceof CompositeData)
 		{
-			log.log(Level.FINE, "found attribute of a composite type: {0}", attribute.getClass());
+			log.log(Level.FINEST, "found attribute of a composite type: {0}", attribute.getClass());
 
 			CompositeData comp = (CompositeData)attribute;
 
@@ -385,10 +380,10 @@ public class CheckerTask implements Runnable
 		}
 		else if (attribute instanceof TabularDataSupport || attribute.getClass().isArray())
 		{
-			log.log(Level.FINE, "found attribute of a known, unsupported type: {0}", attribute.getClass());
+			log.log(Level.FINEST, "found attribute of a known, unsupported type: {0}", attribute.getClass());
 		}
 		else
-			log.log(Level.FINE, "found attribute of an unknown, unsupported type: {0}", attribute.getClass());
+			log.log(Level.FINEST, "found attribute of an unknown, unsupported type: {0}", attribute.getClass());
 	}
 
 	private void discoverBeans(JSONArray counters, ObjectName name)
@@ -446,4 +441,11 @@ public class CheckerTask implements Runnable
 		return null;
 	}
 	
+	private MBeanServer getMbServer()
+	{
+		if (mbServer == null)
+			mbServer = ManagementFactory.getPlatformMBeanServer();
+		return mbServer;
+	}
+
 }
