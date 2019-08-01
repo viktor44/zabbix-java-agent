@@ -1,16 +1,18 @@
 package com.github.zabbix.agent;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.ConsoleHandler;
+import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+
+import com.github.zabbix.agent.log.LogConsoleHandler;
+import com.github.zabbix.agent.log.LogFileHandler;
+import com.github.zabbix.agent.log.LogFormatter;
 
 import lombok.extern.java.Log;
 
@@ -46,9 +48,6 @@ public class ZabbixAgent
 
 	private void initLogger()
 	{
-		if (System.getProperty("java.util.logging.SimpleFormatter.format") == null)
-			System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
-		
 		Level level = null;
 		switch (config.getDebugLevel())
 		{
@@ -74,20 +73,26 @@ public class ZabbixAgent
 				throw new IllegalArgumentException("Invalid DebugLevel value " + config.getDebugLevel());
 		}
 
-		log.setUseParentHandlers(false);
+//		log.setUseParentHandlers(false);
+		
 		try
 		{
+			String p = LogConsoleHandler.class.getName() + ".formatter=" + LogFormatter.class.getName() + "\n"
+						+ LogFileHandler.class.getName() + ".formatter=" + LogFormatter.class.getName() + "\n";
+			LogManager logManager = LogManager.getLogManager();
+			logManager.readConfiguration(new ByteArrayInputStream(p.getBytes()));
+			
 			switch (config.getLogType())
 			{
 				case CONSOLE:
-					log.addHandler(new ConsoleHandler());
+					log.addHandler(new LogConsoleHandler());
 					break;
 				case FILE:
-					log.addHandler(new FileHandler(config.getLogFile()));
+					log.addHandler(new LogFileHandler(config.getLogFile()));
 					break;
 				case ALL:
-					log.addHandler(new ConsoleHandler());
-					log.addHandler(new FileHandler(config.getLogFile()));
+					log.addHandler(new LogConsoleHandler());
+					log.addHandler(new LogFileHandler(config.getLogFile()));
 					break;
 			}
 		}
@@ -95,6 +100,7 @@ public class ZabbixAgent
 		{
 			System.err.println("Unable to write log to '" + config.getLogFile() + "': " + ex.getMessage());
 		}
+		
 		log.setLevel(level);
 		for (Handler handler : log.getHandlers())
 			handler.setLevel(level);

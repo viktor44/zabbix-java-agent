@@ -22,6 +22,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -79,6 +80,7 @@ public class Protocol
 			String msg = requestJson.toString();
 			
 			log.log(Level.FINE, "sending {0}", msg);
+//System.out.println("sending {0}");
 			
 			byte message[] = toZbxMessage(msg);
 			socket.getOutputStream().write(message);
@@ -124,7 +126,10 @@ public class Protocol
 	{
 		try
 		{
+			Logger l1 = log;
+			l1.log(Level.FINE, "Connecting to {0}", serverAddress);
 			log.log(Level.FINE, "Connecting to {0}", serverAddress);
+//System.out.println("Connecting to {0}");
 
 			Socket result = new Socket();
 			result.connect(serverAddress.getSocketAddress(), config.getTimeout() * 1000);
@@ -145,6 +150,7 @@ public class Protocol
 		byte[] data;
 
 		log.finest("reading Zabbix protocol header");
+//System.out.println("reading Zabbix protocol header");
 		
 		data = new byte[5];
 		dis.readFully(data);
@@ -157,6 +163,7 @@ public class Protocol
 					);
 
 		log.finest("reading 8 bytes of data length");
+//System.out.println("reading 8 bytes of data length");
 		
 		data = new byte[8];
 		dis.readFully(data);
@@ -169,6 +176,7 @@ public class Protocol
 			throw new RuntimeException("bad data length: " + length);
 
 		log.log(Level.FINEST, "reading {0} bytes from server", length);
+//System.out.println("reading {0} bytes from server");
 		
 		data = new byte[(int)length];
 		dis.readFully(data);
